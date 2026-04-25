@@ -237,7 +237,7 @@ svg.i{flex-shrink:0}
 
   <!-- LOGGING -->
   <div class="view" id="view-log">
-    <div class="train-bar">
+    <div class="train-bar" id="train-bar">
       <div class="train-q">Training today?</div>
       <div class="train-btns">
         <button class="train-btn" id="btn-no" onclick="setTraining(false)">✕</button>
@@ -781,9 +781,11 @@ function setTraining(val){
 function renderLog(){
   if(!profile){switchView('settings');return;}
   const log=getDayLog();
-  const isTrain=log.is_training_day||false;
+  const trackTrain=profile.track_training_days||false;
+  const isTrain=trackTrain&&(log.is_training_day||false);
   const t=calcTargets(profile,isTrain);
   const totals=calcTotals(log);
+  document.getElementById('train-bar').style.display=trackTrain?'':'none';
   document.getElementById('btn-no').className='train-btn'+(isTrain?'':' no');
   document.getElementById('btn-yes').className='train-btn'+(isTrain?' yes':'');
   document.getElementById('log-macros').innerHTML=macroBars(totals,t);
