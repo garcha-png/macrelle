@@ -214,27 +214,6 @@ svg.i{flex-shrink:0}
     </div>
   </div>
 
-  <!-- WEIGHT (was Stats) -->
-  <div class="view" id="view-stats">
-    <div class="card">
-      <div class="card-title">Weight</div>
-      <div class="chart-filters" id="chart-filters">
-        <button class="cf active" data-r="2w" onclick="setRange('2w')">2w</button>
-        <button class="cf" data-r="1m" onclick="setRange('1m')">1m</button>
-        <button class="cf" data-r="3m" onclick="setRange('3m')">3m</button>
-        <button class="cf" data-r="6m" onclick="setRange('6m')">6m</button>
-        <button class="cf" data-r="1y" onclick="setRange('1y')">1y</button>
-        <button class="cf" data-r="all" onclick="setRange('all')">ALL</button>
-      </div>
-      <div class="weight-graph-outer" id="wt-graph"></div>
-      <div class="wt-tip" id="wt-tip"></div>
-      <div class="wt-log-row">
-        <input type="number" step="0.1" min="30" max="300" id="wt-input" placeholder="Log weight today (kg)">
-        <button onclick="logWeight()">Log</button>
-      </div>
-    </div>
-  </div>
-
   <!-- LOGGING -->
   <div class="view" id="view-log">
     <div class="train-bar" id="train-bar">
@@ -256,6 +235,23 @@ svg.i{flex-shrink:0}
         <button class="w-btn" onclick="adjustWater(-250)">−</button>
         <div class="w-goal" id="water-goal-txt"></div>
         <button class="w-btn" onclick="adjustWater(250)">+</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weight</div>
+      <div class="chart-filters" id="chart-filters">
+        <button class="cf active" data-r="2w" onclick="setRange('2w')">2w</button>
+        <button class="cf" data-r="1m" onclick="setRange('1m')">1m</button>
+        <button class="cf" data-r="3m" onclick="setRange('3m')">3m</button>
+        <button class="cf" data-r="6m" onclick="setRange('6m')">6m</button>
+        <button class="cf" data-r="1y" onclick="setRange('1y')">1y</button>
+        <button class="cf" data-r="all" onclick="setRange('all')">ALL</button>
+      </div>
+      <div class="weight-graph-outer" id="wt-graph"></div>
+      <div class="wt-tip" id="wt-tip"></div>
+      <div class="wt-log-row">
+        <input type="number" step="0.1" min="30" max="300" id="wt-input" placeholder="Log weight today (kg)">
+        <button onclick="logWeight()">Log</button>
       </div>
     </div>
     <div style="height:12px"></div>
@@ -386,13 +382,9 @@ svg.i{flex-shrink:0}
 
   <!-- Bottom Nav -->
   <nav class="bottom-nav hidden" id="bottom-nav">
-    <button class="nav-tab" onclick="switchView('log')" id="tab-log">
+    <button class="nav-tab active" onclick="switchView('log')" id="tab-log">
       <svg class="i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
       <span>Logging</span>
-    </button>
-    <button class="nav-tab active" onclick="switchView('stats')" id="tab-stats">
-      <svg class="i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
-      <span>Weight</span>
     </button>
     <button class="nav-tab" onclick="switchView('settings')" id="tab-settings">
       <svg class="i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -592,7 +584,7 @@ function saveSettings(){
 function continueFromCover(){
   document.getElementById('view-cover').classList.remove('active');
   document.getElementById('bottom-nav').classList.remove('hidden');
-  if(!profile){switchView('settings');}else{checkWeeklyRecalc();switchView('stats');}
+  if(!profile){switchView('settings');}else{checkWeeklyRecalc();switchView('log');}
 }
 
 // ==================== WEEKLY WEIGHT RECALC ====================
@@ -616,13 +608,12 @@ function checkWeeklyRecalc(){
 
 // ==================== VIEW SWITCH ====================
 function switchView(v){
-  ['stats','log','settings'].forEach(id=>{
+  ['log','settings'].forEach(id=>{
     document.getElementById('view-'+id).classList.toggle('active',id===v);
     const tab=document.getElementById('tab-'+id);
     if(tab) tab.classList.toggle('active',id===v);
   });
   document.getElementById('view-cover').classList.remove('active');
-  if(v==='stats') renderStats();
   if(v==='log') renderLog();
   if(v==='settings') populateSettings();
 }
@@ -826,6 +817,7 @@ function renderLog(){
     </div>`;
   }).join('');
   renderWater(t);
+  renderWeightChart();
 }
 
 // ==================== FOOD DB ====================
@@ -980,9 +972,9 @@ async function initApp(){
   if(profile){
     document.getElementById('bottom-nav').classList.remove('hidden');
     document.getElementById('view-cover').classList.remove('active');
-    document.getElementById('view-stats').classList.add('active');
+    document.getElementById('view-log').classList.add('active');
     checkWeeklyRecalc();
-    renderStats();
+    renderLog();
   }
 }
 initApp();
