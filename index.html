@@ -10,7 +10,7 @@
   --bg:#141414;--surface:#1e1e1e;--surface-el:#272727;--border:#333;
   --text:#e0e0e0;--text2:#6a6a6a;--radius:12px;--transition:200ms ease;
   --font:system-ui,-apple-system,sans-serif;
-  --c-cal:#c96b6b;--c-protein:#9b76d4;--c-carbs:#6b96d4;--c-fat:#c9963c;--c-water:#48b4c8;
+  --c-cal:#d94545;--c-protein:#4a9e4a;--c-carbs:#4a80c4;--c-fat:#d48020;--c-water:#9460c8;
 }
 html,body{height:100%;font-family:var(--font);font-size:16px;background:var(--bg);color:var(--text);overflow:hidden}
 button,input,select{font:inherit;color:inherit;border:none;outline:none;background:none}
@@ -62,21 +62,24 @@ svg.i{flex-shrink:0}
 .seg-btn{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;color:var(--text2);text-align:center;min-height:44px;transition:all var(--transition);display:flex;align-items:center;justify-content:center}
 .seg-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.6)}
 
-/* Activity pills */
-.act-grid{display:flex;flex-direction:column;gap:8px}
-.act-pill{padding:13px 16px;border-radius:10px;border:2px solid transparent;text-align:left;min-height:56px;transition:all var(--transition);position:relative}
-.act-pill .act-name{font-size:15px;font-weight:700}
-.act-pill .act-desc{font-size:12px;margin-top:2px;opacity:.7}
-.act-pill .act-check{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;display:none}
+/* Activity pills — 2×2 grid */
+.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.act-pill{padding:12px 14px;border-radius:10px;border:2px solid transparent;text-align:left;min-height:64px;transition:all var(--transition);position:relative;display:flex;flex-direction:column;justify-content:center}
+.act-pill .act-name{font-size:14px;font-weight:700}
+.act-pill .act-desc{font-size:11px;margin-top:3px;opacity:.7}
+.act-pill .act-check{position:absolute;right:10px;top:10px;font-size:13px;display:none}
 .act-pill.sel .act-check{display:block}
-.act-pill[data-v=low]{background:rgba(126,203,166,.06);border-color:rgba(126,203,166,.18);color:#7ecba6}
-.act-pill[data-v=light]{background:rgba(184,164,90,.06);border-color:rgba(184,164,90,.18);color:#b8a45a}
-.act-pill[data-v=moderate]{background:rgba(184,120,69,.06);border-color:rgba(184,120,69,.18);color:#b87845}
-.act-pill[data-v=high]{background:rgba(184,96,96,.06);border-color:rgba(184,96,96,.18);color:#b86060}
-.act-pill.sel[data-v=low]{background:rgba(126,203,166,.13);border-color:rgba(126,203,166,.5)}
-.act-pill.sel[data-v=light]{background:rgba(184,164,90,.13);border-color:rgba(184,164,90,.5)}
-.act-pill.sel[data-v=moderate]{background:rgba(184,120,69,.13);border-color:rgba(184,120,69,.5)}
-.act-pill.sel[data-v=high]{background:rgba(184,96,96,.13);border-color:rgba(184,96,96,.5)}
+.act-pill[data-v=low]{background:rgba(212,192,40,.06);border-color:rgba(212,192,40,.22);color:#d4c028}
+.act-pill[data-v=light]{background:rgba(212,140,32,.06);border-color:rgba(212,140,32,.22);color:#d48c20}
+.act-pill[data-v=moderate]{background:rgba(212,80,24,.06);border-color:rgba(212,80,24,.22);color:#d45018}
+.act-pill[data-v=high]{background:rgba(200,48,48,.06);border-color:rgba(200,48,48,.22);color:#c83030}
+.act-pill.sel[data-v=low]{background:rgba(212,192,40,.14);border-color:rgba(212,192,40,.6)}
+.act-pill.sel[data-v=light]{background:rgba(212,140,32,.14);border-color:rgba(212,140,32,.6)}
+.act-pill.sel[data-v=moderate]{background:rgba(212,80,24,.14);border-color:rgba(212,80,24,.6)}
+.act-pill.sel[data-v=high]{background:rgba(200,48,48,.14);border-color:rgba(200,48,48,.6)}
+/* Settings section header */
+.s-section-hdr{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.8px;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:6px}
+.s-section-hdr:first-child{border-top:none;padding-top:0}
 
 /* Goal pills */
 .goal-list{display:flex;flex-direction:column;gap:8px}
@@ -211,25 +214,8 @@ svg.i{flex-shrink:0}
     </div>
   </div>
 
-  <!-- STATS -->
+  <!-- WEIGHT (was Stats) -->
   <div class="view" id="view-stats">
-    <div class="card" id="stats-macros"></div>
-
-    <div class="card">
-      <div class="tdee-block">
-        <div class="tdee-lbl">Your TDEE</div>
-        <div class="tdee-num" id="tdee-num">—</div>
-        <div class="tdee-sub">kcal / day</div>
-      </div>
-      <div class="goal-block">
-        <div>
-          <div class="goal-block-lbl">Today's goal</div>
-          <div class="goal-block-cal" id="stats-goal-cal">—</div>
-        </div>
-        <button class="change-btn" onclick="switchView('settings')">Change?</button>
-      </div>
-    </div>
-
     <div class="card">
       <div class="card-title">Weight</div>
       <div class="chart-filters" id="chart-filters">
@@ -277,7 +263,10 @@ svg.i{flex-shrink:0}
 
   <!-- SETTINGS -->
   <div class="view" id="view-settings">
-    <div style="font-size:20px;font-weight:800;margin-bottom:20px">Settings</div>
+    <div style="font-size:22px;font-weight:800;margin-bottom:16px">Settings</div>
+
+    <!-- ── TDEE section ── -->
+    <div class="s-section-hdr">TDEE</div>
 
     <div class="s-section">
       <div class="s-label">Name <span style="opacity:.4;font-size:10px;text-transform:none">(optional)</span></div>
@@ -291,7 +280,7 @@ svg.i{flex-shrink:0}
     </div>
 
     <div class="s-section">
-      <div class="s-label">Biological Sex <span style="opacity:.5;font-size:10px;text-transform:none">(for BMR formula)</span></div>
+      <div class="s-label">Biological Sex <span style="opacity:.5;font-size:10px;text-transform:none">(for BMR)</span></div>
       <div class="seg">
         <button class="seg-btn active" id="sx-male" onclick="setSex('male')">Male</button>
         <button class="seg-btn" id="sx-female" onclick="setSex('female')">Female</button>
@@ -324,64 +313,70 @@ svg.i{flex-shrink:0}
       <div class="act-grid">
         <button class="act-pill" data-v="low" onclick="pickActivity('low')">
           <div class="act-name">Low</div>
-          <div class="act-desc">Desk job, minimal walking, no exercise</div>
+          <div class="act-desc">0–1 sessions/week</div>
           <span class="act-check">✓</span>
         </button>
         <button class="act-pill" data-v="light" onclick="pickActivity('light')">
           <div class="act-name">Light</div>
-          <div class="act-desc">Light exercise 1–3 days/week, some daily walking</div>
+          <div class="act-desc">1–3 sessions/week</div>
           <span class="act-check">✓</span>
         </button>
         <button class="act-pill" data-v="moderate" onclick="pickActivity('moderate')">
           <div class="act-name">Moderate</div>
-          <div class="act-desc">Moderate exercise 3–5 days/week</div>
+          <div class="act-desc">3–5 sessions/week</div>
           <span class="act-check">✓</span>
         </button>
         <button class="act-pill" data-v="high" onclick="pickActivity('high')">
           <div class="act-name">High</div>
-          <div class="act-desc">Hard exercise 6–7 days/week or physical job</div>
+          <div class="act-desc">5–7 sessions/week</div>
           <span class="act-check">✓</span>
         </button>
       </div>
     </div>
 
+    <!-- ── GOAL section ── -->
+    <div class="s-section-hdr">Goal</div>
+
     <div class="s-section">
-      <div class="s-label">Goal</div>
       <div class="goal-list">
         <button class="goal-pill" data-v="std_deficit" onclick="pickGoal('std_deficit')">
-          <div class="gn">−500</div><div class="gd">~0.5 kg/wk loss</div>
+          <div><div class="gn">Standard Deficit</div><div class="gd">−500 kcal/day</div></div>
+          <div class="ga">~0.5 kg/wk loss</div>
         </button>
         <button class="goal-pill" data-v="small_deficit" onclick="pickGoal('small_deficit')">
-          <div class="gn">−250</div><div class="gd">~0.25 kg/wk loss</div>
+          <div><div class="gn">Small Deficit</div><div class="gd">−250 kcal/day</div></div>
+          <div class="ga">~0.25 kg/wk loss</div>
         </button>
         <button class="goal-pill" data-v="maintain" onclick="pickGoal('maintain')">
-          <div class="gn">±0</div><div class="gd">hold weight</div>
+          <div><div class="gn">Maintain</div><div class="gd">±0 kcal</div></div>
+          <div class="ga">hold weight</div>
         </button>
         <button class="goal-pill" data-v="small_surplus" onclick="pickGoal('small_surplus')">
-          <div class="gn">+250</div><div class="gd">~0.25 kg/wk gain</div>
+          <div><div class="gn">Small Surplus</div><div class="gd">+250 kcal/day</div></div>
+          <div class="ga">~0.25 kg/wk gain</div>
         </button>
         <button class="goal-pill" data-v="std_surplus" onclick="pickGoal('std_surplus')">
-          <div class="gn">+500</div><div class="gd">~0.5 kg/wk gain</div>
+          <div><div class="gn">Standard Surplus</div><div class="gd">+500 kcal/day</div></div>
+          <div class="ga">~0.5 kg/wk gain</div>
         </button>
       </div>
     </div>
 
     <div class="s-section">
-      <div class="s-label">Training Day Tracking</div>
       <div class="row-between">
         <div>
-          <div style="font-size:15px;font-weight:600">Track training days</div>
+          <div style="font-size:15px;font-weight:600">Training days</div>
           <div style="font-size:12px;color:var(--text2);margin-top:3px">+150 kcal &amp; +500 ml water on gym days</div>
         </div>
         <div class="toggle" id="train-toggle" onclick="toggleTrainPref()"></div>
       </div>
     </div>
 
+    <!-- ── COMPUTED section ── -->
+    <div class="s-section-hdr">Computed Targets</div>
+
     <div class="s-section" id="computed-wrap" style="display:none">
-      <div class="s-label">Computed Targets</div>
-      <div class="card" style="margin-bottom:0">
-        <div class="targets-grid" id="targets-grid"></div>
-      </div>
+      <div class="targets-grid" id="targets-grid"></div>
       <div id="s-warnings"></div>
     </div>
 
@@ -397,7 +392,7 @@ svg.i{flex-shrink:0}
     </button>
     <button class="nav-tab active" onclick="switchView('stats')" id="tab-stats">
       <svg class="i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
-      <span>Stats</span>
+      <span>Weight</span>
     </button>
     <button class="nav-tab" onclick="switchView('settings')" id="tab-settings">
       <svg class="i" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -654,22 +649,8 @@ function macroBars(totals,t){
   }).join('');
 }
 
-// ==================== RENDER STATS ====================
+// ==================== RENDER STATS (Weight page) ====================
 function renderStats(){
-  if(!profile) return;
-  const log=getDayLog();
-  const isTrain=log.is_training_day||false;
-  const t=calcTargets(profile,isTrain);
-  const totals=calcTotals(log);
-  document.getElementById('tdee-num').textContent=t.tdee.toLocaleString();
-  const GOAL_ADJ={std_deficit:'−500',small_deficit:'−250',maintain:'±0',small_surplus:'+250',std_surplus:'+500'};
-  document.getElementById('stats-goal-cal').textContent=t.calToday.toLocaleString()+' kcal  ('+( GOAL_ADJ[profile.goal]||'')+ ')';
-  document.getElementById('stats-macros').innerHTML=macroBars(totals,t)
-    +`<div class="prog-row" style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
-        <div class="prog-top"><span class="prog-label">Water</span>
-          <span class="prog-nums" style="color:var(--c-water)">${getWater()} / ${t.water} ml</span></div>
-        <div class="prog-bar"><div class="prog-fill" style="width:${Math.min(getWater()/t.water,1)*100}%;background:var(--c-water)"></div></div>
-      </div>`;
   renderWeightChart();
 }
 
