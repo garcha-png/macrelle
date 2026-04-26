@@ -911,13 +911,37 @@ function lookupFood(q){
   if(m) return m;
   m=FOOD_DB.find(f=>f.name.toLowerCase().includes(query)||query.includes(f.name.toLowerCase()));
   if(m) return m;
-  const words=query.split(/\s+/);
-  return FOOD_DB.find(f=>{const n=f.name.toLowerCase();return words.some(w=>w.length>2&&n.includes(w));})||null;
+  const STOP=new Set(['and','with','the','for','a','an','of','on','in','or','some','cup','bowl','piece','slice','serving','large','small','medium']);
+  const words=query.split(/\s+/).filter(w=>w.length>3&&!STOP.has(w));
+  return words.length?FOOD_DB.find(f=>{const n=f.name.toLowerCase();return words.some(w=>n.includes(w));})||null:null;
 }
 
-function addFood(meal){
+const GEMINI_KEY='AIzaSyAQ4KLkdmlN3J1iM5syjm3cp2vFViyrR_8';
+
+async function lookupFoodAI(text){
+  const prompt=`You are a nutrition database. The user logged: "${text}"
+Return ONLY a JSON array of food items. Each item must have:
+  name (string), cals (integer), protein_g (integer), carbs_g (integer), fat_g (integer)
+Use realistic per-serving values. No markdown, no explanation — raw JSON array only.
+Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g":15}]`;
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})
+    });
+    if(!r.ok) return null;
+    const data=await r.json();
+    const raw=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    const items=JSON.parse(raw);
+    return Array.isArray(items)?items:null;
+  }catch{return null;}
+}
+
+async function addFood(meal){
   const inp=document.getElementById('finp-'+meal);
   const err=document.getElementById('ferr-'+meal);
+  const btn=inp.nextElementSibling;
   const text=inp.value.trim();
   if(!text) return;
   inp.value='';err.style.display='none';
@@ -926,8 +950,18 @@ function addFood(meal){
     const log=getDayLog();
     log[meal].push({id:genId(),name:match.name,cals:match.cals,protein_g:match.protein_g,carbs_g:match.carbs_g,fat_g:match.fat_g});
     saveDayLog(log);renderLog();
+    return;
+  }
+  // Fall back to Gemini
+  btn.textContent='…';btn.disabled=true;
+  const items=await lookupFoodAI(text);
+  btn.textContent='+';btn.disabled=false;
+  if(items&&items.length){
+    const log=getDayLog();
+    items.forEach(it=>log[meal].push({id:genId(),name:it.name,cals:it.cals||0,protein_g:it.protein_g||0,carbs_g:it.carbs_g||0,fat_g:it.fat_g||0}));
+    saveDayLog(log);renderLog();
   } else {
-    err.textContent='Food not found — try a different name';err.style.display='';
+    err.textContent='Could not find nutrition info — try rephrasing';err.style.display='';
   }
 }
 
