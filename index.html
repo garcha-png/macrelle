@@ -199,6 +199,36 @@ svg.i{flex-shrink:0}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Repeats */
+.repeats-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.repeats-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.r-title{font-size:15px;font-weight:700}
+.r-add{width:28px;height:28px;border-radius:50%;background:var(--surface-el);font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;color:var(--text);line-height:1}
+.repeat-item{background:var(--surface-el);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.repeat-item:last-of-type{margin-bottom:0}
+.ri-row{display:flex;align-items:center;gap:8px;cursor:pointer}
+.ri-name{font-size:14px;font-weight:600;flex:1}
+.ri-meta{font-size:11px;color:var(--text2);margin-top:3px}
+.ri-del{width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--text2);flex-shrink:0}
+.ri-del:active{color:var(--c-cal)}
+.ri-log-lbl{font-size:11px;color:var(--text2);margin:8px 0 4px}
+.ri-meal-btns{display:flex;gap:6px;flex-wrap:wrap}
+.ri-meal-btn{padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--text);min-height:30px}
+.ri-meal-btn:active{background:var(--border)}
+.r-empty{font-size:13px;color:var(--text2);padding:2px 0 4px}
+.nr-form{background:var(--surface-el);border-radius:10px;padding:12px;margin-top:10px}
+.nr-name{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:16px;color:var(--text);margin-bottom:8px;min-height:46px}
+.nr-name.err{border-color:var(--c-cal)}
+.nr-items{margin-bottom:6px}
+.nr-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.nr-item:last-child{border-bottom:none}
+.nr-inp-row{display:flex;gap:8px;margin-bottom:6px}
+.nr-inp{flex:1;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:16px;color:var(--text);min-height:44px}
+.nr-inp-btn{width:44px;height:44px;border-radius:8px;background:var(--text);color:var(--bg);font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nr-action-btns{display:flex;gap:8px;margin-top:10px}
+.nr-save{flex:1;padding:10px;background:var(--text);color:var(--bg);font-weight:700;border-radius:8px;font-size:14px;min-height:42px}
+.nr-cancel{padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:8px;font-size:14px;min-height:42px}
 </style>
 </head>
 <body>
@@ -225,6 +255,7 @@ svg.i{flex-shrink:0}
     </div>
     <div class="card" id="log-macros"></div>
     <div id="meal-sections"></div>
+    <div id="repeats-section"></div>
     <div class="water-card">
       <div class="water-row">
         <div class="water-lbl">Water</div>
@@ -407,7 +438,9 @@ let _goal='maintain';
 let _trackTrain=false;
 
 // In-memory store — loaded once from backend, written back async
-const ST={profile:null,logs:{},weightLog:[],water:{},lastWeekCalc:''};
+const ST={profile:null,logs:{},weightLog:[],water:{},lastWeekCalc:'',repeats:[]};
+
+let _expandedRepeat=null,_newRepeatOpen=false,_pendingRepeatItems=[],_pendingRepeatName='';
 
 async function api(path,method='GET',body=undefined){
   try{
@@ -817,6 +850,7 @@ function renderLog(){
     </div>`;
   }).join('');
   renderWater(t);
+  renderRepeats();
   renderWeightChart();
 }
 
@@ -971,6 +1005,113 @@ function deleteFood(meal,id){
   saveDayLog(log);renderLog();
 }
 
+// ==================== REPEATS ====================
+function saveRepeats(){api('/api/data/repeats','PUT',ST.repeats);}
+
+function renderRepeats(){
+  const el=document.getElementById('repeats-section');
+  if(!el) return;
+  const list=ST.repeats.map(r=>{
+    const cals=r.items.reduce((a,i)=>a+(i.cals||0),0);
+    const prot=r.items.reduce((a,i)=>a+(i.protein_g||0),0);
+    const exp=_expandedRepeat===r.id;
+    return `<div class="repeat-item">
+      <div class="ri-row" onclick="toggleRepeatExpand('${r.id}')">
+        <div style="flex:1">
+          <div class="ri-name">${esc(r.name)}</div>
+          <div class="ri-meta">${r.items.length} item${r.items.length!==1?'s':''} · ${cals} cal · ${prot}g P</div>
+        </div>
+        <button class="ri-del" onclick="event.stopPropagation();deleteRepeat('${r.id}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      ${exp?`<div class="ri-log-lbl">Log to:</div><div class="ri-meal-btns">${['breakfast','lunch','dinner','snack'].map(m=>`<button class="ri-meal-btn" onclick="logRepeat('${r.id}','${m}')">${MEAL_LABELS[m]}</button>`).join('')}</div>`:''}
+    </div>`;
+  }).join('');
+
+  const pendingHTML=_pendingRepeatItems.map((it,i)=>
+    `<div class="nr-item"><span>${esc(it.name)} <span style="color:var(--text2)">${it.cals} cal</span></span>
+     <button onclick="removeRepeatItem(${i})" style="font-size:11px;color:var(--text2);padding:2px 4px">✕</button></div>`
+  ).join('');
+
+  const newForm=_newRepeatOpen?`<div class="nr-form">
+    <input class="nr-name" id="nr-name" type="text" placeholder="Template name (e.g. Post workout)" value="${esc(_pendingRepeatName)}" oninput="_pendingRepeatName=this.value">
+    <div class="nr-items">${pendingHTML}</div>
+    <div class="nr-inp-row">
+      <input class="nr-inp" id="nr-food-inp" type="text" placeholder="Add food..." onkeydown="if(event.key==='Enter')addItemToRepeat()">
+      <button class="nr-inp-btn" id="nr-add-btn" onclick="addItemToRepeat()">+</button>
+    </div>
+    <div class="food-err" id="nr-err"></div>
+    <div class="nr-action-btns">
+      <button class="nr-save" onclick="saveNewRepeat()">Save</button>
+      <button class="nr-cancel" onclick="cancelNewRepeat()">Cancel</button>
+    </div>
+  </div>`:'';
+
+  el.innerHTML=`<div class="repeats-card">
+    <div class="repeats-hdr">
+      <div class="r-title">Repeats</div>
+      ${!_newRepeatOpen?`<button class="r-add" onclick="startNewRepeat()">+</button>`:''}
+    </div>
+    ${ST.repeats.length?list:'<div class="r-empty">No templates yet — tap + to create one.</div>'}
+    ${newForm}
+  </div>`;
+}
+
+function toggleRepeatExpand(id){
+  _expandedRepeat=_expandedRepeat===id?null:id;
+  renderRepeats();
+}
+
+function logRepeat(id,meal){
+  const r=ST.repeats.find(x=>x.id===id);
+  if(!r) return;
+  const log=getDayLog();
+  r.items.forEach(it=>log[meal].push({id:genId(),name:it.name,cals:it.cals,protein_g:it.protein_g,carbs_g:it.carbs_g,fat_g:it.fat_g}));
+  saveDayLog(log);
+  _expandedRepeat=null;
+  renderLog();
+}
+
+function deleteRepeat(id){
+  ST.repeats=ST.repeats.filter(r=>r.id!==id);
+  saveRepeats();
+  if(_expandedRepeat===id) _expandedRepeat=null;
+  renderRepeats();
+}
+
+function startNewRepeat(){_newRepeatOpen=true;_pendingRepeatItems=[];_pendingRepeatName='';renderRepeats();}
+function cancelNewRepeat(){_newRepeatOpen=false;_pendingRepeatItems=[];_pendingRepeatName='';renderRepeats();}
+
+function removeRepeatItem(idx){_pendingRepeatItems.splice(idx,1);renderRepeats();}
+
+async function addItemToRepeat(){
+  const inp=document.getElementById('nr-food-inp');
+  const err=document.getElementById('nr-err');
+  const btn=document.getElementById('nr-add-btn');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value='';err.style.display='none';
+  const match=lookupFood(text);
+  if(match){_pendingRepeatItems.push({name:match.name,cals:match.cals,protein_g:match.protein_g,carbs_g:match.carbs_g,fat_g:match.fat_g});renderRepeats();return;}
+  btn.textContent='…';btn.disabled=true;
+  const items=await lookupFoodAI(text);
+  btn.textContent='+';btn.disabled=false;
+  if(items&&items.length){items.forEach(it=>_pendingRepeatItems.push({name:it.name,cals:it.cals||0,protein_g:it.protein_g||0,carbs_g:it.carbs_g||0,fat_g:it.fat_g||0}));renderRepeats();}
+  else{err.textContent='Food not found';err.style.display='';}
+}
+
+function saveNewRepeat(){
+  const nameEl=document.getElementById('nr-name');
+  const name=(_pendingRepeatName||(nameEl?.value||'')).trim();
+  if(!name){nameEl?.classList.add('err');return;}
+  if(!_pendingRepeatItems.length) return;
+  ST.repeats.push({id:genId(),name,items:[..._pendingRepeatItems]});
+  saveRepeats();
+  _newRepeatOpen=false;_pendingRepeatItems=[];_pendingRepeatName='';
+  renderRepeats();
+}
+
 // ==================== WATER ====================
 function getWater(){return ST.water[todayKey()]||0;}
 function setWater(ml){const v=Math.max(0,ml);ST.water[todayKey()]=v;api('/api/data/water_'+todayKey(),'PUT',v);}
@@ -991,18 +1132,20 @@ function renderWater(t){
 // ==================== INIT ====================
 async function initApp(){
   const today=todayKey();
-  const [prof,todayLog,wLog,waterVal,lwc]=await Promise.all([
+  const [prof,todayLog,wLog,waterVal,lwc,repeats]=await Promise.all([
     api('/api/data/profile'),
     api('/api/data/log_'+today),
     api('/api/data/weight_log'),
     api('/api/data/water_'+today),
-    api('/api/data/last_week_calc')
+    api('/api/data/last_week_calc'),
+    api('/api/data/repeats')
   ]);
   ST.profile=profile=prof?migrateProfile(prof):null;
   ST.logs[today]=todayLog||{breakfast:[],lunch:[],dinner:[],snack:[],is_training_day:false};
   ST.weightLog=wLog||[];
   ST.water[today]=waterVal!=null?parseInt(waterVal):0;
   ST.lastWeekCalc=lwc||'';
+  ST.repeats=repeats||[];
   if(profile){
     document.getElementById('bottom-nav').classList.remove('hidden');
     document.getElementById('view-cover').classList.remove('active');
