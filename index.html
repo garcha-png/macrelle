@@ -142,7 +142,7 @@ svg.i{flex-shrink:0}
 .wt-tip{position:fixed;background:var(--surface-el);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;pointer-events:none;z-index:20;display:none;white-space:nowrap}
 .wt-log-row{display:flex;gap:8px;margin-top:4px}
 .wt-log-row input{flex:1;padding:12px 14px;background:var(--surface-el);border:1px solid var(--border);border-radius:10px;font-size:16px;color:var(--text);min-height:48px}
-.wt-log-row button{padding:0 18px;background:var(--text);color:var(--bg);border-radius:10px;font-size:14px;font-weight:700;min-height:48px;white-space:nowrap}
+.wt-log-row button{padding:0 18px;background:var(--text);color:var(--bg);border-radius:10px;font-size:14px;font-weight:700;min-height:48px;white-space:nowrap;display:flex;align-items:center;justify-content:center}
 .wt-entry-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
 .wt-entry-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface-el);border-radius:8px}
 .wt-entry-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
@@ -192,7 +192,7 @@ svg.i{flex-shrink:0}
 .water-lbl{font-size:15px;font-weight:700}
 .water-val{font-size:18px;font-weight:700;color:var(--c-water)}
 .water-ctrl-row{display:flex;align-items:center;gap:12px;margin-top:10px}
-.w-btn{padding:8px 24px;border-radius:999px;background:var(--surface-el);font-size:20px;font-weight:700;min-height:40px;color:var(--text)}
+.w-btn{padding:8px 24px;border-radius:999px;background:var(--surface-el);font-size:20px;font-weight:700;min-height:40px;color:var(--text);display:flex;align-items:center;justify-content:center}
 .w-btn:active{background:var(--border)}
 .w-goal{flex:1;text-align:center;font-size:13px;color:var(--text2)}
 
@@ -203,6 +203,8 @@ svg.i{flex-shrink:0}
 /* Repeats */
 .repeats-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
 .repeats-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.repeats-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;margin-bottom:0;user-select:none}
+.repeats-toggle:has(+*){margin-bottom:12px}
 .r-title{font-size:15px;font-weight:700}
 .r-add{width:28px;height:28px;border-radius:50%;background:var(--surface-el);font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;color:var(--text);line-height:1}
 .repeat-item{background:var(--surface-el);border-radius:10px;padding:12px 14px;margin-bottom:8px}
@@ -255,7 +257,6 @@ svg.i{flex-shrink:0}
     </div>
     <div class="card" id="log-macros"></div>
     <div id="meal-sections"></div>
-    <div id="repeats-section"></div>
     <div class="water-card">
       <div class="water-row">
         <div class="water-lbl">Water</div>
@@ -268,6 +269,7 @@ svg.i{flex-shrink:0}
         <button class="w-btn" onclick="adjustWater(250)">+</button>
       </div>
     </div>
+    <div id="repeats-section"></div>
     <div class="card">
       <div class="card-title">Weight</div>
       <div class="chart-filters" id="chart-filters">
@@ -440,7 +442,7 @@ let _trackTrain=false;
 // In-memory store — loaded once from backend, written back async
 const ST={profile:null,logs:{},weightLog:[],water:{},lastWeekCalc:'',repeats:[]};
 
-let _expandedRepeat=null,_newRepeatOpen=false,_pendingRepeatItems=[],_pendingRepeatName='';
+let _expandedRepeat=null,_newRepeatOpen=false,_pendingRepeatItems=[],_pendingRepeatName='',_repeatsOpen=false;
 
 async function api(path,method='GET',body=undefined){
   try{
@@ -1011,6 +1013,21 @@ function saveRepeats(){api('/api/data/repeats','PUT',ST.repeats);}
 function renderRepeats(){
   const el=document.getElementById('repeats-section');
   if(!el) return;
+  const chevron=_repeatsOpen
+    ?`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`
+    :`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+  const count=ST.repeats.length;
+  const toggleRow=`<div class="repeats-toggle" onclick="_repeatsOpen=!_repeatsOpen;renderRepeats()">
+    <span class="r-title">Repeats${count?` <span style="font-size:11px;color:var(--text2);font-weight:400">(${count})</span>`:''}
+    </span>
+    <span style="display:flex;align-items:center;gap:8px;color:var(--text2)">
+      ${_repeatsOpen&&!_newRepeatOpen?`<button class="r-add" onclick="event.stopPropagation();startNewRepeat()" style="width:24px;height:24px;font-size:18px">+</button>`:''}
+      ${chevron}
+    </span>
+  </div>`;
+
+  if(!_repeatsOpen){el.innerHTML=`<div class="repeats-card">${toggleRow}</div>`;return;}
+
   const list=ST.repeats.map(r=>{
     const cals=r.items.reduce((a,i)=>a+(i.cals||0),0);
     const prot=r.items.reduce((a,i)=>a+(i.protein_g||0),0);
@@ -1031,7 +1048,7 @@ function renderRepeats(){
 
   const pendingHTML=_pendingRepeatItems.map((it,i)=>
     `<div class="nr-item"><span>${esc(it.name)} <span style="color:var(--text2)">${it.cals} cal</span></span>
-     <button onclick="removeRepeatItem(${i})" style="font-size:11px;color:var(--text2);padding:2px 4px">✕</button></div>`
+     <button onclick="removeRepeatItem(${i})" style="font-size:11px;color:var(--text2);padding:2px 6px;display:flex;align-items:center;justify-content:center">✕</button></div>`
   ).join('');
 
   const newForm=_newRepeatOpen?`<div class="nr-form">
@@ -1049,11 +1066,8 @@ function renderRepeats(){
   </div>`:'';
 
   el.innerHTML=`<div class="repeats-card">
-    <div class="repeats-hdr">
-      <div class="r-title">Repeats</div>
-      ${!_newRepeatOpen?`<button class="r-add" onclick="startNewRepeat()">+</button>`:''}
-    </div>
-    ${ST.repeats.length?list:'<div class="r-empty">No templates yet — tap + to create one.</div>'}
+    ${toggleRow}
+    ${!_newRepeatOpen&&(ST.repeats.length?list:'<div class="r-empty">No templates yet — tap + to create one.</div>')}
     ${newForm}
   </div>`;
 }
@@ -1080,7 +1094,7 @@ function deleteRepeat(id){
   renderRepeats();
 }
 
-function startNewRepeat(){_newRepeatOpen=true;_pendingRepeatItems=[];_pendingRepeatName='';renderRepeats();}
+function startNewRepeat(){_newRepeatOpen=true;_repeatsOpen=true;_pendingRepeatItems=[];_pendingRepeatName='';renderRepeats();}
 function cancelNewRepeat(){_newRepeatOpen=false;_pendingRepeatItems=[];_pendingRepeatName='';renderRepeats();}
 
 function removeRepeatItem(idx){_pendingRepeatItems.splice(idx,1);renderRepeats();}
