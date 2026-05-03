@@ -1,131 +1,91 @@
-# Macrelle — Nutrition Tracker
+# CLAUDE.md
 
-Mobile-first macro/nutrition tracking web app. Single `index.html` file, vanilla HTML/CSS/JS, all data in localStorage. No backend, no build step required. Served via Vite dev server.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Structure
-- `index.html` — entire app (HTML + CSS + JS in one file)
-- `public/logo.png` — Macrelle brand logo
-- `.claude/launch.json` — dev server config (`npm run dev`, port 5173)
-- `package.json` — Vite deps
+## Commands
 
-## Brand
-- Name: **Macrelle**
-- Tagline: "Track Your Macros"
-- Target users: teens aged 10–18
+```bash
+# Run both servers for development (two terminals)
+npm run dev        # Vite frontend → http://localhost:5173
+npm run server     # Express backend → http://localhost:3001
 
-## Design System
-| Token | Value | Use |
-|-------|-------|-----|
-| `--bg` | `#080808` | Page background |
-| `--surface` | `#111111` | Cards |
-| `--surface2` | `#1a1a1a` | Inputs |
-| `--border` | `#2a2a2a` | Dividers |
-| `--text` | `#ffffff` | Primary text |
-| `--text2` | `#888888` | Secondary text |
-| `--c-cal` | `#ef4444` | Calories (red) |
-| `--c-protein` | `#a855f7` | Protein (purple) |
-| `--c-carbs` | `#3b82f6` | Carbs (blue) |
-| `--c-fat` | `#f59e0b` | Fat (amber) |
-| `--c-water` | `#06b6d4` | Water (cyan) |
-| `--radius` | `16px` | Border radius |
+# Production build
+npm run build      # tsc + vite build → dist/
+npm run preview    # Preview built dist/
+```
 
-- Min font: 16px. Min tap target: 48px. Dark mode only.
-- Icons: inline Lucide SVG via `icon(name, size)` helper — paths in `ICONS` object.
+Both servers must be running during development. Vite proxies all `/api` requests to port 3001.
 
-## App Flow
-1. **Cover screen** (`#view-cover`) — logo, tagline, Continue button
-2. **Onboarding modal** (first launch, steps 0–3):
-   - Step 0: Name, Age, Units toggle, Sex toggle
-   - Step 1: Height, Weight (metric or imperial)
-   - Step 2: Activity level (4 colored pills)
-   - Step 3: Goal (5 colored pills) + training day toggle
-3. **Logging page** (default after onboarding)
-4. **Stats page** and **Settings page** via bottom nav
+## Architecture
 
-## Pages / Views
-### Logging (`#view-log`)
-Order: Training day toggle (✕/✓) → Macro summary bars (Cal/P/C/F) → 4 meal cards (Breakfast/Lunch/Dinner/Snack) → Water tracker (+250ml/+500ml/custom)
+The app has two distinct layers:
 
-### Stats (`#view-stats`)
-Order: Macro progress bars → TDEE card (with today's goal + "Change?" link) → Weight chart (bar chart, 6 time ranges) → Log weight input
+**`index.html`** — the entire active app. One file containing all HTML, CSS, and vanilla JS. No framework, no build step required to run. This is what users interact with.
 
-### Settings (`#view-settings`)
-Full page: Name → Age → Units → Sex → Height → Weight → Activity pills → Goal pills → Training day toggle → **Computed targets grid** (live updates on input change)
+**`server.js`** — Express backend serving a single SQLite KV table (`macrelle.db`) via `better-sqlite3`. All app state is persisted here through a simple REST API:
+- `GET /api/data/:key` — fetch a value
+- `PUT /api/data/:key` — upsert a value (any JSON body)
+- `DELETE /api/data/:key` — delete a key
+- `GET /api/data?prefix=log_` — bulk fetch by key prefix
 
-## TDEE / BMR Calculation
-**Mifflin-St Jeor BMR:**
-- Male: `(10 × weight_kg) + (6.25 × height_cm) − (5 × age) + 5`
-- Female: `(10 × weight_kg) + (6.25 × height_cm) − (5 × age) − 161`
+The `src/` directory and `react-app.html` are an unused prototype. All development happens in `index.html` and `server.js`.
 
-**Activity multipliers:**
-| Level | Multiplier |
-|-------|------------|
-| low | 1.2 |
-| light | 1.375 |
-| moderate | 1.55 |
-| high | 1.725 |
+## Backend Keys
 
-**Goal adjustments:**
-| Goal | kcal/day |
-|------|----------|
-| std_deficit | −500 |
-| small_deficit | −250 |
-| maintain | 0 |
-| small_surplus | +250 |
-| std_surplus | +500 |
+| Key | Contents |
+|-----|----------|
+| `profile` | `{age, sex, height_cm, weight_kg, act_gym, act_cardio, act_steps, goal, track_training_days, cal_offset}` |
+| `log_YYYY-MM-DD` | `{breakfast, lunch, dinner, snack, is_training_day}` — each meal is `[{id, name, cals, protein_g, carbs_g, fat_g}]` |
+| `weight_log` | `[{date, kg}]` newest first |
+| `water_YYYY-MM-DD` | integer ml |
+| `repeats` | `[{id, name, items:[{name,cals,protein_g,carbs_g,fat_g}]}]` |
 
-**Safety floors:** 1500 kcal (male), 1200 kcal (female)
+## TDEE Calculation
 
-**Training day:** +150 kcal, +500ml water (when `track_training_days` enabled)
+**BMR:** Mifflin-St Jeor — male: `(10×kg)+(6.25×cm)−(5×age)+5`, female: `…−161`
 
-**Macro targets:**
-- Protein: activity-tiered (low=1.4g/kg, light=1.6g/kg, moderate=1.8g/kg, high=2.0g/kg)
-- Fat: 25% of base calorie goal ÷ 9
-- Carbs: remaining calories ÷ 4
-- Water: `35 × weight_kg` ml (+ 500ml on training days)
+**Activity multiplier** (`calcActivityMult`): additive from three independent components:
+- `act_gym` (0 / 1-2 / 3-4 / 5+): adds 0 / 0.07 / 0.14 / 0.21
+- `act_cardio` (0 / 1-2 / 3-4 / 5+): adds 0 / 0.05 / 0.10 / 0.15
+- `act_steps` (low / light / moderate / active): adds 0 / 0.04 / 0.08 / 0.13
+- Base 1.2, capped at 1.9
 
-## localStorage Keys
-| Key | Type | Contents |
-|-----|------|----------|
-| `profile` | JSON | `{name, age, sex, height_cm, weight_kg, units, activity, goal, track_training_days}` |
-| `log_YYYY-MM-DD` | JSON | `{breakfast:[], lunch:[], dinner:[], snack:[]}` each item: `{id, name, cals, protein_g, carbs_g, fat_g}` |
-| `weight_log` | JSON | `[{date:'YYYY-MM-DD', kg:number}]` newest first |
-| `water_YYYY-MM-DD` | string | integer ml |
-| `last_week_calc` | string | `'YYYY-MM-DD'` of last Monday weight recalc |
+**Goal adjustments:** std_deficit −500, small_deficit −250, maintain 0, small_surplus +250, std_surplus +500
+
+**`cal_offset`:** user's manual fine-tune (±50 kcal steps, capped ±1000), applied on top of goal adjustment before the safety floor (1500 kcal male / 1200 kcal female).
+
+**Training day:** +150 kcal, +500 ml water when `track_training_days` is on.
+
+**Macro targets:** protein tiered by multiplier (<1.35→1.4g/kg, <1.50→1.6, <1.65→1.8, else→2.0); fat 25% of calories; carbs remainder; water 35ml/kg.
+
+## Food Lookup
+
+All food entries go straight to Gemini 2.5 Flash Lite — there is no local food database. `lookupFoodAI(text)` sends the raw user input and expects a JSON array of `{name, cals, protein_g, carbs_g, fat_g}`. The button shows `…` while awaiting the response.
+
+API key is hardcoded as `GEMINI_KEY` in `index.html`. Model: `gemini-2.5-flash-lite-preview-06-17`.
+
+## UI Structure
+
+Two views, toggled via `switchView(v)`:
+
+**Logging (`#view-log`):** training bar (hidden when `track_training_days` is off) → macro summary bars → meal sections (Breakfast/Lunch/Dinner/Snack) → water card → repeats panel (collapsible) → weight chart
+
+**Settings (`#view-settings`):** three sections — *TDEE* (age, sex, height, weight, 3-part activity selectors), *Goal* (5 goal pills, training toggle, fine-tune offset stepper), *Computed Targets* (live 2×4 grid: BMR/TDEE/Goal base/Goal today/Protein/Fat/Carbs/Water)
+
+`liveCompute()` recalculates and updates the Computed Targets grid on every input change, debouncing `autoSaveSettings()` by 700ms.
+
+## Design Tokens
+
+```css
+--bg:#141414        --surface:#1e1e1e    --surface-el:#272727
+--border:#333       --text:#e0e0e0       --text2:#6a6a6a
+--radius:12px
+--c-cal:#d94545     --c-protein:#4a9e4a  --c-carbs:#4a80c4
+--c-fat:#d48020     --c-water:#9460c8
+```
+
+Meal colours: Breakfast `#f97316`, Lunch `#3b82f6`, Dinner `#a855f7`, Snack `#fbbf24`
 
 ## Profile Migration
-`loadProfile()` auto-migrates old schema:
-- `weight` → `weight_kg`, `height` → `height_cm`
-- Old activity strings (Sedentary/Lightly Active/…) → new enum (low/light/moderate/high)
-- Old goal strings → new enum (std_deficit/small_deficit/maintain/…)
 
-## Food Log Migration
-`calcTotals()` checks both old `{calories, protein, carbs, fat}` and new `{cals, protein_g, carbs_g, fat_g}` item schemas. `getDayLog()` migrates `snacks` → `snack`.
-
-## Food Database
-- 80+ offline entries in `FOOD_DB` array (South Asian, African, Middle Eastern, SE Asian, Latin American, Caribbean, Western)
-- Schema: `{name, cals, protein_g, carbs_g, fat_g}`
-- `lookupFood(query)` — 3-tier fuzzy: exact → substring → word-based
-
-## Key JS Functions
-| Function | Purpose |
-|----------|---------|
-| `calcBMR(p)` | Mifflin-St Jeor BMR |
-| `calcTargets(p, isTrain)` | All macro/water targets |
-| `loadProfile()` | Load + migrate old profile schema |
-| `renderStats()` | Stats page |
-| `renderFoodLog()` | All meal cards |
-| `renderWeightChart(range)` | SVG bar chart weight graph |
-| `submitFood(meal)` | Add food via fuzzy lookup |
-| `adjustWater(delta)` | +/- water intake |
-| `switchView(v)` | Navigate log/stats/settings |
-| `checkWeeklyRecalc()` | Auto-update weight weekly |
-| `icon(name, size)` | Render inline Lucide SVG |
-
-## Weight Chart
-SVG bar chart (replacing old bezier line). Time range filters: 2w / 1m / 3m / 6m / 1y / ALL. Tap bar for tooltip.
-
-## Pending / Next Features
-- Natural language food lookup (e.g. "3 eggs and a piece of toast") — Nutritionix API primary, Claude Haiku fallback
-- lb/kg unit toggle (UI in Settings, not yet wired to all displays)
-- Food portion size adjustment
+`migrateProfile(p)` runs on every load. Handles: old field names (`weight`→`weight_kg`, `height`→`height_cm`), legacy activity strings (Sedentary/Lightly Active/…→new enum), legacy goal strings, and old single `activity` field → three-component `act_gym`/`act_cardio`/`act_steps`.

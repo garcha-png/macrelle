@@ -62,21 +62,10 @@ svg.i{flex-shrink:0}
 .seg-btn{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;color:var(--text2);text-align:center;min-height:44px;transition:all var(--transition);display:flex;align-items:center;justify-content:center}
 .seg-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.6)}
 
-/* Activity pills — 2×2 grid */
-.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.act-pill{padding:12px 14px;border-radius:10px;border:2px solid transparent;text-align:left;min-height:64px;transition:all var(--transition);position:relative;display:flex;flex-direction:column;justify-content:center}
-.act-pill .act-name{font-size:14px;font-weight:700}
-.act-pill .act-desc{font-size:11px;margin-top:3px;opacity:.7}
-.act-pill .act-check{position:absolute;right:10px;top:10px;font-size:13px;display:none}
-.act-pill.sel .act-check{display:block}
-.act-pill[data-v=low]{background:rgba(212,192,40,.06);border-color:rgba(212,192,40,.22);color:#d4c028}
-.act-pill[data-v=light]{background:rgba(212,140,32,.06);border-color:rgba(212,140,32,.22);color:#d48c20}
-.act-pill[data-v=moderate]{background:rgba(212,80,24,.06);border-color:rgba(212,80,24,.22);color:#d45018}
-.act-pill[data-v=high]{background:rgba(200,48,48,.06);border-color:rgba(200,48,48,.22);color:#c83030}
-.act-pill.sel[data-v=low]{background:rgba(212,192,40,.14);border-color:rgba(212,192,40,.6)}
-.act-pill.sel[data-v=light]{background:rgba(212,140,32,.14);border-color:rgba(212,140,32,.6)}
-.act-pill.sel[data-v=moderate]{background:rgba(212,80,24,.14);border-color:rgba(212,80,24,.6)}
-.act-pill.sel[data-v=high]{background:rgba(200,48,48,.14);border-color:rgba(200,48,48,.6)}
+/* Activity segmented rows */
+.act-seg{display:flex;gap:6px}
+.act-seg-btn{flex:1;padding:9px 4px;border-radius:8px;border:2px solid var(--border);background:var(--surface-el);color:var(--text2);font-size:12px;font-weight:600;text-align:center;transition:all var(--transition)}
+.act-seg-btn.sel{border-color:var(--c-protein);color:var(--c-protein);background:rgba(74,158,74,.12)}
 /* Settings section header */
 .s-section-hdr{font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.8px;padding:14px 0 10px;border-top:1px solid var(--border);margin-top:6px}
 .s-section-hdr:first-child{border-top:none;padding-top:0}
@@ -298,11 +287,6 @@ svg.i{flex-shrink:0}
     <div class="s-section-hdr">TDEE</div>
 
     <div class="s-section">
-      <div class="s-label">Name <span style="opacity:.4;font-size:10px;text-transform:none">(optional)</span></div>
-      <input class="s-input" type="text" id="inp-name" placeholder="Your name" oninput="liveCompute()">
-    </div>
-
-    <div class="s-section">
       <div class="s-label">Age</div>
       <input class="s-input" type="number" id="inp-age" min="13" max="100" placeholder="Years" oninput="liveCompute()">
       <div class="err-inline" id="age-err">Age must be between 13 and 100.</div>
@@ -338,28 +322,38 @@ svg.i{flex-shrink:0}
     </div>
 
     <div class="s-section">
-      <div class="s-label">Activity Level</div>
-      <div class="act-grid">
-        <button class="act-pill" data-v="low" onclick="pickActivity('low')">
-          <div class="act-name">Low</div>
-          <div class="act-desc">0–1 sessions/week</div>
-          <span class="act-check">✓</span>
-        </button>
-        <button class="act-pill" data-v="light" onclick="pickActivity('light')">
-          <div class="act-name">Light</div>
-          <div class="act-desc">1–3 sessions/week</div>
-          <span class="act-check">✓</span>
-        </button>
-        <button class="act-pill" data-v="moderate" onclick="pickActivity('moderate')">
-          <div class="act-name">Moderate</div>
-          <div class="act-desc">3–5 sessions/week</div>
-          <span class="act-check">✓</span>
-        </button>
-        <button class="act-pill" data-v="high" onclick="pickActivity('high')">
-          <div class="act-name">High</div>
-          <div class="act-desc">5–7 sessions/week</div>
-          <span class="act-check">✓</span>
-        </button>
+      <div class="s-label">Gym / Lifting <span style="opacity:.5;font-size:10px;text-transform:none">(sessions/week)</span></div>
+      <div class="act-seg" id="seg-gym">
+        <button class="act-seg-btn" data-v="0"   onclick="pickActGym('0')">0</button>
+        <button class="act-seg-btn" data-v="1-2" onclick="pickActGym('1-2')">1–2</button>
+        <button class="act-seg-btn" data-v="3-4" onclick="pickActGym('3-4')">3–4</button>
+        <button class="act-seg-btn" data-v="5+"  onclick="pickActGym('5+')">5+</button>
+      </div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-label">Cardio / Sports / Outdoors <span style="opacity:.5;font-size:10px;text-transform:none">(sessions/week)</span></div>
+      <div class="act-seg" id="seg-cardio">
+        <button class="act-seg-btn" data-v="0"   onclick="pickActCardio('0')">0</button>
+        <button class="act-seg-btn" data-v="1-2" onclick="pickActCardio('1-2')">1–2</button>
+        <button class="act-seg-btn" data-v="3-4" onclick="pickActCardio('3-4')">3–4</button>
+        <button class="act-seg-btn" data-v="5+"  onclick="pickActCardio('5+')">5+</button>
+      </div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-label">Daily Movement / Steps</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:6px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);line-height:1.3">~1k–3k<br>steps</div>
+        <div style="font-size:10px;color:var(--text2);line-height:1.3">~4k–6k<br>steps</div>
+        <div style="font-size:10px;color:var(--text2);line-height:1.3">~7k–10k<br>steps</div>
+        <div style="font-size:10px;color:var(--text2);line-height:1.3">~11k+<br>steps</div>
+      </div>
+      <div class="act-seg" id="seg-steps">
+        <button class="act-seg-btn" data-v="low"      onclick="pickActSteps('low')">Sitting</button>
+        <button class="act-seg-btn" data-v="light"    onclick="pickActSteps('light')">Walking</button>
+        <button class="act-seg-btn" data-v="moderate" onclick="pickActSteps('moderate')">On feet</button>
+        <button class="act-seg-btn" data-v="active"   onclick="pickActSteps('active')">Always up</button>
       </div>
     </div>
 
@@ -401,6 +395,22 @@ svg.i{flex-shrink:0}
       </div>
     </div>
 
+    <div class="s-section">
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px">Fine-tune</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Nudge your goal based on how your weight is actually moving</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="stepOffset(-50)" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);background:var(--surface-el);font-size:20px;font-weight:700;color:var(--text2);display:flex;align-items:center;justify-content:center">−</button>
+        <div style="flex:1;text-align:center">
+          <div id="offset-display" style="font-size:22px;font-weight:800;color:var(--text)">0</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">kcal / day</div>
+        </div>
+        <button onclick="stepOffset(+50)" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);background:var(--surface-el);font-size:20px;font-weight:700;color:var(--text2);display:flex;align-items:center;justify-content:center">+</button>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:8px">
+        <button onclick="stepOffset(-_calOffset)" style="font-size:11px;color:var(--text2);padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:transparent">Reset to 0</button>
+      </div>
+    </div>
+
     <!-- ── COMPUTED section ── -->
     <div class="s-section-hdr">Computed Targets</div>
 
@@ -435,8 +445,9 @@ const MEAL_COLORS={breakfast:'#f97316',lunch:'#3b82f6',dinner:'#a855f7',snack:'#
 let profile=null;
 let _range='2w';
 let _sex='male';
-let _activity='light';
+let _actGym='1-2',_actCardio='1-2',_actSteps='light';
 let _goal='maintain';
+let _calOffset=0;
 let _trackTrain=false;
 
 // In-memory store — loaded once from backend, written back async
@@ -463,17 +474,25 @@ function calcBMR(p){
   return p.sex==='male'?base+5:base-161;
 }
 
+function calcActivityMult(p){
+  let m=1.2;
+  m+=({'0':0,'1-2':0.07,'3-4':0.14,'5+':0.21}[p.act_gym]??0.07);
+  m+=({'0':0,'1-2':0.05,'3-4':0.10,'5+':0.15}[p.act_cardio]??0.05);
+  m+=({low:0,light:0.04,moderate:0.08,active:0.13}[p.act_steps]??0.04);
+  return Math.min(m,1.9);
+}
+
 function calcTargets(p,isTrain){
   const bmr=Math.round(calcBMR(p));
-  const mult={low:1.2,light:1.375,moderate:1.55,high:1.725}[p.activity]||1.375;
+  const mult=calcActivityMult(p);
   const tdee=Math.round(bmr*mult);
   const adj={std_deficit:-500,small_deficit:-250,maintain:0,small_surplus:250,std_surplus:500}[p.goal]||0;
   const floor=p.sex==='male'?1500:1200;
-  const rawGoal=tdee+adj;
+  const rawGoal=tdee+adj+(p.cal_offset||0);
   let calGoal=Math.max(rawGoal,floor);
   const floorHit=rawGoal<floor;
   const calToday=isTrain&&p.track_training_days?calGoal+150:calGoal;
-  const protPerKg={low:1.4,light:1.6,moderate:1.8,high:2.0}[p.activity]||1.6;
+  const protPerKg=mult<1.35?1.4:mult<1.50?1.6:mult<1.65?1.8:2.0;
   let prot=Math.round(p.weight_kg*protPerKg);
   let protCal=prot*4;
   const fatCal=Math.round(calGoal*0.25);
@@ -490,9 +509,17 @@ function calcTargets(p,isTrain){
 function migrateProfile(p){
   if(p.weight&&!p.weight_kg) p.weight_kg=p.weight;
   if(p.height&&!p.height_cm) p.height_cm=p.height;
+  // Normalize legacy activity string first
   if(!p.activity||['Sedentary','Lightly Active','Moderately Active','Very Active','Extra Active'].includes(p.activity)){
     const map={'Sedentary':'low','Lightly Active':'light','Moderately Active':'moderate','Very Active':'high','Extra Active':'high'};
     p.activity=map[p.activity]||'light';
+  }
+  // Migrate single activity → three-component fields
+  if(!p.act_gym&&!p.act_cardio&&!p.act_steps){
+    const a=p.activity||'light';
+    p.act_gym   ={low:'0',light:'1-2',moderate:'3-4',high:'5+'}[a]||'1-2';
+    p.act_cardio={low:'0',light:'1-2',moderate:'3-4',high:'5+'}[a]||'1-2';
+    p.act_steps ={low:'low',light:'light',moderate:'moderate',high:'active'}[a]||'light';
   }
   if(!p.goal||p.goal==='deficit') p.goal='small_deficit';
   if(p.goal==='surplus') p.goal='small_surplus';
@@ -510,9 +537,26 @@ function setSex(s){
   liveCompute();
 }
 
-function pickActivity(a){
-  _activity=a;
-  document.querySelectorAll('.act-pill').forEach(p=>p.classList.toggle('sel',p.dataset.v===a));
+function stepOffset(delta){
+  _calOffset=Math.max(-1000,Math.min(1000,_calOffset+delta));
+  const el=document.getElementById('offset-display');
+  if(el) el.textContent=(_calOffset>0?'+':'')+_calOffset;
+  liveCompute();
+}
+
+function pickActGym(v){
+  _actGym=v;
+  document.querySelectorAll('#seg-gym .act-seg-btn').forEach(b=>b.classList.toggle('sel',b.dataset.v===v));
+  liveCompute();
+}
+function pickActCardio(v){
+  _actCardio=v;
+  document.querySelectorAll('#seg-cardio .act-seg-btn').forEach(b=>b.classList.toggle('sel',b.dataset.v===v));
+  liveCompute();
+}
+function pickActSteps(v){
+  _actSteps=v;
+  document.querySelectorAll('#seg-steps .act-seg-btn').forEach(b=>b.classList.toggle('sel',b.dataset.v===v));
   liveCompute();
 }
 
@@ -541,7 +585,7 @@ function liveCompute(){
   const wrap=document.getElementById('computed-wrap');
   if(!age||!h||!w){wrap.style.display='none';return;}
   wrap.style.display='';
-  const tmp={age,sex:_sex,height_cm:h,weight_kg:w,activity:_activity,goal:_goal,track_training_days:_trackTrain};
+  const tmp={age,sex:_sex,height_cm:h,weight_kg:w,act_gym:_actGym,act_cardio:_actCardio,act_steps:_actSteps,goal:_goal,track_training_days:_trackTrain,cal_offset:_calOffset};
   const t=calcTargets(tmp,false);
   document.getElementById('targets-grid').innerHTML=`
     <div class="t-item"><div class="t-item-label">BMR</div><div class="t-item-value">${t.bmr.toLocaleString()} kcal</div></div>
@@ -563,15 +607,14 @@ function liveCompute(){
 }
 
 function autoSaveSettings(){
-  const name=document.getElementById('inp-name').value.trim();
   const age=parseInt(document.getElementById('inp-age').value);
   const ft=parseFloat(document.getElementById('inp-height-ft').value)||0;
   const inches=parseFloat(document.getElementById('inp-height-in').value)||0;
   const h=ftInToCm(ft,inches);
   const w=parseFloat(document.getElementById('inp-weight').value);
   if(!age||age<13||age>100||(!ft&&!inches)||!w||w<10) return;
-  profile=ST.profile={name,age,sex:_sex,height_cm:Math.round(h*10)/10,weight_kg:Math.round(w*10)/10,
-    activity:_activity,goal:_goal,track_training_days:_trackTrain};
+  profile=ST.profile={age,sex:_sex,height_cm:Math.round(h*10)/10,weight_kg:Math.round(w*10)/10,
+    act_gym:_actGym,act_cardio:_actCardio,act_steps:_actSteps,goal:_goal,track_training_days:_trackTrain,cal_offset:_calOffset};
   api('/api/data/profile','PUT',profile);
   document.getElementById('bottom-nav').classList.remove('hidden');
   const ind=document.getElementById('save-indicator');
@@ -580,13 +623,17 @@ function autoSaveSettings(){
 
 function populateSettings(){
   if(!profile) return;
-  document.getElementById('inp-name').value=profile.name||'';
   document.getElementById('inp-age').value=profile.age||'';
   _sex=profile.sex||'male';
-  _activity=profile.activity||'light';
+  _actGym=profile.act_gym||'1-2';
+  _actCardio=profile.act_cardio||'1-2';
+  _actSteps=profile.act_steps||'light';
   _goal=profile.goal||'maintain';
   _trackTrain=profile.track_training_days||false;
-  setSex(_sex);pickActivity(_activity);pickGoal(_goal);
+  _calOffset=profile.cal_offset||0;
+  setSex(_sex);pickActGym(_actGym);pickActCardio(_actCardio);pickActSteps(_actSteps);pickGoal(_goal);
+  const od=document.getElementById('offset-display');
+  if(od) od.textContent=(_calOffset>0?'+':'')+_calOffset;
   document.getElementById('train-toggle').classList.toggle('on',_trackTrain);
   if(profile.height_cm){
     const {ft,inches}=cmToFtIn(profile.height_cm);
@@ -856,101 +903,7 @@ function renderLog(){
   renderWeightChart();
 }
 
-// ==================== FOOD DB ====================
-const FOOD_DB=[
-  {name:'Biryani',cals:490,protein_g:18,carbs_g:62,fat_g:18},
-  {name:'Dal',cals:220,protein_g:12,carbs_g:32,fat_g:5},
-  {name:'Roti',cals:120,protein_g:3,carbs_g:22,fat_g:3},
-  {name:'Chapati',cals:120,protein_g:3,carbs_g:22,fat_g:3},
-  {name:'Idli',cals:130,protein_g:4,carbs_g:26,fat_g:1},
-  {name:'Dosa',cals:170,protein_g:4,carbs_g:28,fat_g:5},
-  {name:'Samosa',cals:260,protein_g:5,carbs_g:30,fat_g:14},
-  {name:'Paneer Butter Masala',cals:420,protein_g:18,carbs_g:16,fat_g:32},
-  {name:'Palak Paneer',cals:350,protein_g:16,carbs_g:12,fat_g:26},
-  {name:'Chole',cals:280,protein_g:12,carbs_g:38,fat_g:10},
-  {name:'Aloo Gobi',cals:200,protein_g:5,carbs_g:28,fat_g:8},
-  {name:'Naan',cals:260,protein_g:8,carbs_g:42,fat_g:6},
-  {name:'Raita',cals:80,protein_g:4,carbs_g:6,fat_g:4},
-  {name:'Lassi',cals:180,protein_g:6,carbs_g:28,fat_g:5},
-  {name:'Jollof Rice',cals:420,protein_g:8,carbs_g:68,fat_g:12},
-  {name:'Egusi Soup',cals:350,protein_g:16,carbs_g:10,fat_g:28},
-  {name:'Fufu',cals:330,protein_g:2,carbs_g:80,fat_g:1},
-  {name:'Suya',cals:280,protein_g:22,carbs_g:4,fat_g:20},
-  {name:'Puff Puff',cals:350,protein_g:5,carbs_g:48,fat_g:16},
-  {name:'Injera',cals:180,protein_g:5,carbs_g:36,fat_g:1},
-  {name:'Tibs',cals:320,protein_g:28,carbs_g:6,fat_g:20},
-  {name:'Ugali',cals:290,protein_g:4,carbs_g:66,fat_g:1},
-  {name:'Nyama Choma',cals:380,protein_g:34,carbs_g:0,fat_g:26},
-  {name:'Mandazi',cals:300,protein_g:5,carbs_g:40,fat_g:14},
-  {name:'Shawarma',cals:520,protein_g:28,carbs_g:42,fat_g:26},
-  {name:'Hummus',cals:180,protein_g:8,carbs_g:18,fat_g:10},
-  {name:'Falafel',cals:340,protein_g:14,carbs_g:36,fat_g:16},
-  {name:'Mansaf',cals:580,protein_g:26,carbs_g:52,fat_g:28},
-  {name:'Tabbouleh',cals:140,protein_g:3,carbs_g:18,fat_g:7},
-  {name:'Pad Thai',cals:460,protein_g:16,carbs_g:58,fat_g:18},
-  {name:'Nasi Lemak',cals:520,protein_g:14,carbs_g:60,fat_g:26},
-  {name:'Pho',cals:380,protein_g:22,carbs_g:48,fat_g:10},
-  {name:'Rendang',cals:450,protein_g:30,carbs_g:8,fat_g:34},
-  {name:'Dim Sum',cals:280,protein_g:12,carbs_g:30,fat_g:12},
-  {name:'Tamales',cals:420,protein_g:12,carbs_g:48,fat_g:20},
-  {name:'Arepas',cals:220,protein_g:5,carbs_g:32,fat_g:8},
-  {name:'Empanada',cals:300,protein_g:10,carbs_g:28,fat_g:16},
-  {name:'Gallo Pinto',cals:340,protein_g:12,carbs_g:56,fat_g:8},
-  {name:'Burrito',cals:520,protein_g:22,carbs_g:58,fat_g:22},
-  {name:'Ackee and Saltfish',cals:360,protein_g:22,carbs_g:8,fat_g:28},
-  {name:'Pelau',cals:440,protein_g:18,carbs_g:54,fat_g:16},
-  {name:'Rice',cals:210,protein_g:4,carbs_g:46,fat_g:1},
-  {name:'Chicken Breast',cals:280,protein_g:42,carbs_g:0,fat_g:12},
-  {name:'Grilled Chicken',cals:280,protein_g:42,carbs_g:0,fat_g:12},
-  {name:'Salmon',cals:360,protein_g:34,carbs_g:0,fat_g:24},
-  {name:'Egg',cals:78,protein_g:6,carbs_g:1,fat_g:5},
-  {name:'Eggs',cals:156,protein_g:12,carbs_g:2,fat_g:10},
-  {name:'Scrambled Eggs',cals:200,protein_g:14,carbs_g:2,fat_g:15},
-  {name:'Oatmeal',cals:160,protein_g:6,carbs_g:28,fat_g:3},
-  {name:'Greek Yogurt',cals:130,protein_g:12,carbs_g:8,fat_g:6},
-  {name:'Banana',cals:105,protein_g:1,carbs_g:27,fat_g:0},
-  {name:'Apple',cals:95,protein_g:0,carbs_g:25,fat_g:0},
-  {name:'Orange',cals:65,protein_g:1,carbs_g:16,fat_g:0},
-  {name:'Toast',cals:160,protein_g:5,carbs_g:28,fat_g:3},
-  {name:'Peanut Butter Toast',cals:280,protein_g:10,carbs_g:30,fat_g:15},
-  {name:'Avocado Toast',cals:300,protein_g:7,carbs_g:28,fat_g:18},
-  {name:'Pasta',cals:380,protein_g:12,carbs_g:68,fat_g:6},
-  {name:'Pizza',cals:540,protein_g:22,carbs_g:60,fat_g:24},
-  {name:'Burger',cals:550,protein_g:30,carbs_g:40,fat_g:30},
-  {name:'Sandwich',cals:380,protein_g:18,carbs_g:38,fat_g:16},
-  {name:'Salad',cals:150,protein_g:5,carbs_g:12,fat_g:9},
-  {name:'Caesar Salad',cals:280,protein_g:12,carbs_g:14,fat_g:20},
-  {name:'Soup',cals:180,protein_g:8,carbs_g:22,fat_g:6},
-  {name:'Steak',cals:450,protein_g:42,carbs_g:0,fat_g:30},
-  {name:'Fish and Chips',cals:580,protein_g:24,carbs_g:52,fat_g:30},
-  {name:'Fried Rice',cals:380,protein_g:10,carbs_g:52,fat_g:14},
-  {name:'Sushi',cals:320,protein_g:14,carbs_g:48,fat_g:6},
-  {name:'Tacos',cals:420,protein_g:18,carbs_g:36,fat_g:22},
-  {name:'Cereal',cals:240,protein_g:8,carbs_g:40,fat_g:5},
-  {name:'Smoothie',cals:250,protein_g:6,carbs_g:48,fat_g:4},
-  {name:'Protein Shake',cals:180,protein_g:30,carbs_g:8,fat_g:3},
-  {name:'Milk',cals:150,protein_g:8,carbs_g:12,fat_g:8},
-  {name:'Cheese',cals:110,protein_g:7,carbs_g:0,fat_g:9},
-  {name:'Nuts',cals:180,protein_g:5,carbs_g:6,fat_g:16},
-  {name:'Chips',cals:250,protein_g:3,carbs_g:24,fat_g:16},
-  {name:'Chocolate',cals:240,protein_g:3,carbs_g:28,fat_g:14},
-  {name:'Cookie',cals:150,protein_g:2,carbs_g:20,fat_g:7},
-  {name:'Ice Cream',cals:200,protein_g:3,carbs_g:24,fat_g:11},
-  {name:'Juice',cals:120,protein_g:1,carbs_g:28,fat_g:0},
-  {name:'Coffee',cals:40,protein_g:2,carbs_g:4,fat_g:2},
-  {name:'Tea',cals:2,protein_g:0,carbs_g:0,fat_g:0}
-];
-
-function lookupFood(q){
-  const query=q.toLowerCase().trim();
-  let m=FOOD_DB.find(f=>f.name.toLowerCase()===query);
-  if(m) return m;
-  m=FOOD_DB.find(f=>f.name.toLowerCase().includes(query)||query.includes(f.name.toLowerCase()));
-  if(m) return m;
-  const STOP=new Set(['and','with','the','for','a','an','of','on','in','or','some','cup','bowl','piece','slice','serving','large','small','medium']);
-  const words=query.split(/\s+/).filter(w=>w.length>3&&!STOP.has(w));
-  return words.length?FOOD_DB.find(f=>{const n=f.name.toLowerCase();return words.some(w=>n.includes(w));})||null:null;
-}
+// ==================== FOOD LOOKUP ====================
 
 const GEMINI_KEY='AIzaSyAQ4KLkdmlN3J1iM5syjm3cp2vFViyrR_8';
 
@@ -961,7 +914,7 @@ Return ONLY a JSON array of food items. Each item must have:
 Use realistic per-serving values. No markdown, no explanation — raw JSON array only.
 Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g":15}]`;
   try{
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`,{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${GEMINI_KEY}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})
@@ -981,14 +934,6 @@ async function addFood(meal){
   const text=inp.value.trim();
   if(!text) return;
   inp.value='';err.style.display='none';
-  const match=lookupFood(text);
-  if(match){
-    const log=getDayLog();
-    log[meal].push({id:genId(),name:match.name,cals:match.cals,protein_g:match.protein_g,carbs_g:match.carbs_g,fat_g:match.fat_g});
-    saveDayLog(log);renderLog();
-    return;
-  }
-  // Fall back to Gemini
   btn.textContent='…';btn.disabled=true;
   const items=await lookupFoodAI(text);
   btn.textContent='+';btn.disabled=false;
@@ -997,7 +942,7 @@ async function addFood(meal){
     items.forEach(it=>log[meal].push({id:genId(),name:it.name,cals:it.cals||0,protein_g:it.protein_g||0,carbs_g:it.carbs_g||0,fat_g:it.fat_g||0}));
     saveDayLog(log);renderLog();
   } else {
-    err.textContent='Could not find nutrition info — try rephrasing';err.style.display='';
+    err.textContent='Could not identify that food — try being more specific';err.style.display='';
   }
 }
 
@@ -1067,7 +1012,7 @@ function renderRepeats(){
 
   el.innerHTML=`<div class="repeats-card">
     ${toggleRow}
-    ${!_newRepeatOpen&&(ST.repeats.length?list:'<div class="r-empty">No templates yet — tap + to create one.</div>')}
+    ${!_newRepeatOpen?(ST.repeats.length?list:'<div class="r-empty">No templates yet — tap + to create one.</div>'):''}
     ${newForm}
   </div>`;
 }
