@@ -10,11 +10,30 @@ npm run dev        # Vite frontend → http://localhost:5173
 npm run server     # Express backend → http://localhost:3001
 
 # Production build
-npm run build      # tsc + vite build → dist/
+npm run build      # tsc -b && vite build → dist/
 npm run preview    # Preview built dist/
 ```
 
 Both servers must be running during development. Vite proxies all `/api` requests to port 3001.
+
+## Deployment
+
+**Live URL:** `https://macrelle-production.up.railway.app`
+
+- **Railway** runs the Node server (`node server.js`), build command: `npm install && npx vite build`
+- **Turso** hosts the SQLite database in the cloud (persistent across redeploys)
+- Push to `main` on `garcha-png/macrelle` → Railway auto-deploys
+
+**Required environment variables on Railway:**
+
+| Variable | Purpose |
+|----------|---------|
+| `GEMINI_KEY` | Google Gemini API key for food lookup |
+| `AUTH_TOKEN` | Password to access the app |
+| `TURSO_URL` | Turso database URL (`libsql://...`) |
+| `TURSO_AUTH_TOKEN` | Turso auth token |
+
+In local dev, none of these are required — the server falls back to a local `macrelle.db` file and skips auth if `AUTH_TOKEN` is not set.
 
 ## Architecture
 
@@ -22,15 +41,34 @@ The app has two distinct layers:
 
 **`index.html`** — the entire active app. One file containing all HTML, CSS, and vanilla JS. No framework, no build step required to run. This is what users interact with.
 
-**`server.js`** — Express backend serving a single SQLite KV table (`macrelle.db`) via `better-sqlite3`. All app state is persisted here through a simple REST API:
-- `GET /api/data/:key` — fetch a value
-- `PUT /api/data/:key` — upsert a value (any JSON body)
-- `DELETE /api/data/:key` — delete a key
-- `GET /api/data?prefix=log_` — bulk fetch by key prefix
+**`server.js`** — Express backend with three responsibilities:
+1. Serves the built frontend via `express.static('dist')`
+2. Proxies food lookups to Gemini (`POST /api/food`) — API key never reaches the browser
+3. Persists all app state to Turso via a simple KV REST API
 
-The `src/` directory and `react-app.html` are an unused prototype. All development happens in `index.html` and `server.js`.
+The `src/` directory and `react-app.html` are an unused React prototype. All development happens in `index.html` and `server.js`.
 
-## Backend Keys
+## Security
+
+- All `/api` routes are protected by auth middleware — checks `Authorization: Bearer <AUTH_TOKEN>` header
+- Auth is skipped entirely in local dev when `AUTH_TOKEN` env var is not set
+- `index.html` shows a password gate on first load; token is stored in `localStorage` as `_tok`
+- `initApp()` probes `/api/data/profile` on startup to detect if auth is needed and validate any stored token
+- Gemini API key lives only in Railway env vars — the browser calls `/api/food`, never Gemini directly
+
+## Backend API
+
+**KV store** (`@libsql/client` → Turso):
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/data/:key` | Fetch a value |
+| `PUT /api/data/:key` | Upsert a value (any JSON body) |
+| `DELETE /api/data/:key` | Delete a key |
+| `GET /api/data?prefix=log_` | Bulk fetch by key prefix |
+| `POST /api/food` | Proxy food text to Gemini, returns `[{name,cals,protein_g,carbs_g,fat_g}]` |
+
+**Database keys:**
 
 | Key | Contents |
 |-----|----------|
@@ -60,9 +98,9 @@ The `src/` directory and `react-app.html` are an unused prototype. All developme
 
 ## Food Lookup
 
-All food entries go straight to Gemini 2.5 Flash Lite — there is no local food database. `lookupFoodAI(text)` sends the raw user input and expects a JSON array of `{name, cals, protein_g, carbs_g, fat_g}`. The button shows `…` while awaiting the response.
+All food entries go to `POST /api/food` on the backend, which proxies to Gemini 2.5 Flash Lite. There is no local food database. The button shows `…` while awaiting the response. Both `addFood` (meal logging) and `addItemToRepeat` (repeat templates) use this route.
 
-API key is hardcoded as `GEMINI_KEY` in `index.html`. Model: `gemini-2.5-flash-lite-preview-06-17`.
+Model: `gemini-2.5-flash-lite-preview-06-17`
 
 ## UI Structure
 
