@@ -223,6 +223,21 @@ svg.i{flex-shrink:0}
 </style>
 </head>
 <body>
+<!-- Password gate — shown only when server has AUTH_TOKEN set -->
+<div id="auth-gate" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px">
+  <img src="/logo.png" style="width:80px;height:80px;border-radius:20px;margin-bottom:4px" alt="LiftEat">
+  <div style="font-size:22px;font-weight:800">LiftEat</div>
+  <div style="font-size:14px;color:var(--text2)">Enter your password to continue</div>
+  <input id="auth-inp" type="password" placeholder="Password" autocomplete="current-password"
+    style="width:100%;max-width:280px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;font-size:16px;text-align:center;margin-top:6px"
+    onkeydown="if(event.key==='Enter')submitAuth()">
+  <button onclick="submitAuth()"
+    style="width:100%;max-width:280px;padding:14px;background:var(--text);color:var(--bg);border-radius:999px;font-weight:700;font-size:16px">
+    Unlock
+  </button>
+  <div id="auth-err" style="color:var(--c-cal);font-size:13px;display:none">Wrong password — try again</div>
+</div>
+
 <div class="app">
 
   <!-- COVER -->
@@ -443,6 +458,7 @@ const MEAL_LABELS={breakfast:'Breakfast',lunch:'Lunch',dinner:'Dinner',snack:'Sn
 const MEAL_COLORS={breakfast:'#f97316',lunch:'#3b82f6',dinner:'#a855f7',snack:'#fbbf24'};
 
 let profile=null;
+let _authToken=localStorage.getItem('_tok')||'';
 let _range='2w';
 let _sex='male';
 let _actGym='1-2',_actCardio='1-2',_actSteps='light';
@@ -457,7 +473,10 @@ let _expandedRepeat=null,_newRepeatOpen=false,_pendingRepeatItems=[],_pendingRep
 
 async function api(path,method='GET',body=undefined){
   try{
-    const r=await fetch(path,{method,headers:body!==undefined?{'Content-Type':'application/json'}:{},body:body!==undefined?JSON.stringify(body):undefined});
+    const headers={};
+    if(body!==undefined) headers['Content-Type']='application/json';
+    if(_authToken) headers['Authorization']='Bearer '+_authToken;
+    const r=await fetch(path,{method,headers,body:body!==undefined?JSON.stringify(body):undefined});
     if(!r.ok) return null;
     const t=await r.text();
     return t?JSON.parse(t):null;
@@ -905,28 +924,6 @@ function renderLog(){
 
 // ==================== FOOD LOOKUP ====================
 
-const GEMINI_KEY='AIzaSyAQ4KLkdmlN3J1iM5syjm3cp2vFViyrR_8';
-
-async function lookupFoodAI(text){
-  const prompt=`You are a nutrition database. The user logged: "${text}"
-Return ONLY a JSON array of food items. Each item must have:
-  name (string), cals (integer), protein_g (integer), carbs_g (integer), fat_g (integer)
-Use realistic per-serving values. No markdown, no explanation — raw JSON array only.
-Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g":15}]`;
-  try{
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${GEMINI_KEY}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})
-    });
-    if(!r.ok) return null;
-    const data=await r.json();
-    const raw=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    const items=JSON.parse(raw);
-    return Array.isArray(items)?items:null;
-  }catch{return null;}
-}
-
 async function addFood(meal){
   const inp=document.getElementById('finp-'+meal);
   const err=document.getElementById('ferr-'+meal);
@@ -935,7 +932,7 @@ async function addFood(meal){
   if(!text) return;
   inp.value='';err.style.display='none';
   btn.textContent='…';btn.disabled=true;
-  const items=await lookupFoodAI(text);
+  const items=await api('/api/food','POST',{text});
   btn.textContent='+';btn.disabled=false;
   if(items&&items.length){
     const log=getDayLog();
@@ -1051,10 +1048,8 @@ async function addItemToRepeat(){
   const text=inp.value.trim();
   if(!text) return;
   inp.value='';err.style.display='none';
-  const match=lookupFood(text);
-  if(match){_pendingRepeatItems.push({name:match.name,cals:match.cals,protein_g:match.protein_g,carbs_g:match.carbs_g,fat_g:match.fat_g});renderRepeats();return;}
   btn.textContent='…';btn.disabled=true;
-  const items=await lookupFoodAI(text);
+  const items=await api('/api/food','POST',{text});
   btn.textContent='+';btn.disabled=false;
   if(items&&items.length){items.forEach(it=>_pendingRepeatItems.push({name:it.name,cals:it.cals||0,protein_g:it.protein_g||0,carbs_g:it.carbs_g||0,fat_g:it.fat_g||0}));renderRepeats();}
   else{err.textContent='Food not found';err.style.display='';}
@@ -1088,11 +1083,26 @@ function renderWater(t){
   document.getElementById('water-fill').style.width=(pct*100)+'%';
 }
 
+// ==================== AUTH ====================
+async function submitAuth(){
+  const pw=document.getElementById('auth-inp').value;
+  if(!pw) return;
+  const r=await fetch('/api/data/profile',{headers:{'Authorization':'Bearer '+pw}});
+  if(r.status===401){
+    document.getElementById('auth-err').style.display='';
+    return;
+  }
+  _authToken=pw;
+  localStorage.setItem('_tok',pw);
+  document.getElementById('auth-gate').style.display='none';
+  const prof=r.ok?(await r.json()):null;
+  await loadAppData(prof);
+}
+
 // ==================== INIT ====================
-async function initApp(){
+async function loadAppData(prof){
   const today=todayKey();
-  const [prof,todayLog,wLog,waterVal,lwc,repeats]=await Promise.all([
-    api('/api/data/profile'),
+  const [todayLog,wLog,waterVal,lwc,repeats]=await Promise.all([
     api('/api/data/log_'+today),
     api('/api/data/weight_log'),
     api('/api/data/water_'+today),
@@ -1112,6 +1122,22 @@ async function initApp(){
     checkWeeklyRecalc();
     renderLog();
   }
+}
+
+async function initApp(){
+  // Probe the API to check if auth is required
+  const headers=_authToken?{'Authorization':'Bearer '+_authToken}:{};
+  const probe=await fetch('/api/data/profile',{headers});
+  if(probe.status===401){
+    // Clear any stale stored token and show gate
+    _authToken='';localStorage.removeItem('_tok');
+    document.getElementById('auth-gate').style.display='flex';
+    return;
+  }
+  // No auth required or token valid — proceed
+  document.getElementById('auth-gate').style.display='none';
+  const prof=probe.ok?(await probe.json()):null;
+  await loadAppData(prof);
 }
 initApp();
 </script>
