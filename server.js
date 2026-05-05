@@ -38,7 +38,7 @@ Use realistic per-serving values. No markdown, no explanation — raw JSON array
 Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g":15}]`;
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-06-17:generateContent?key=${process.env.GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } }) }
     );
@@ -47,7 +47,8 @@ Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g"
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const items = JSON.parse(raw);
     res.json(Array.isArray(items) ? items : []);
-  } catch {
+  } catch (e) {
+    console.error('Gemini error:', e.message);
     res.status(502).json({ error: 'Gemini failed' });
   }
 });
