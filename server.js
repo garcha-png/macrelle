@@ -42,7 +42,11 @@ Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g"
       { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } }) }
     );
-    if (!r.ok) return res.status(502).json({ error: 'Gemini error' });
+    if (!r.ok) {
+      const errBody = await r.text();
+      console.error('Gemini bad response:', r.status, errBody);
+      return res.status(502).json({ error: 'Gemini error' });
+    }
     const data = await r.json();
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const items = JSON.parse(raw);
@@ -82,4 +86,9 @@ app.get('/api/data', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Macrelle backend → http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Macrelle backend → http://localhost:${PORT}`);
+  console.log(`GEMINI_KEY set: ${!!process.env.GEMINI_KEY}`);
+  console.log(`AUTH_TOKEN set: ${!!process.env.AUTH_TOKEN}`);
+  console.log(`TURSO_URL set: ${!!process.env.TURSO_URL}`);
+});
