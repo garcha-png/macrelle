@@ -32,15 +32,10 @@ app.post('/api/food', async (req, res) => {
   const { text } = req.body || {};
   if (!text) return res.status(400).json({ error: 'text required' });
   const prompt = `You are a nutrition database. The user logged: "${text}"
-
-Rules:
-1. QUANTITIES — If a number is stated (e.g. "9 garlic breads", "3 eggs"), multiply all macros by that number. Return the TOTAL for the amount logged, not per-serving.
-2. CUSTOM RECIPES — If the item is described with its ingredients (e.g. "tea made with 100ml milk and 1 tsp sugar"), return each ingredient as a separate item with macros for the exact amount stated. Do not return a generic "tea" entry.
-3. MEASUREMENTS — Honour units (100ml, 200g, 1 cup, 1 tbsp). Calculate macros for the exact quantity stated.
-
-Return ONLY a JSON array. Each item: name (string), cals (integer), protein_g (integer), carbs_g (integer), fat_g (integer).
-No markdown, no explanation — raw JSON array only.
-Example: [{"name":"Garlic bread x9","cals":1170,"protein_g":27,"carbs_g":162,"fat_g":45}]`;
+Return ONLY a JSON array of food items. Each item must have:
+  name (string), cals (integer), protein_g (integer), carbs_g (integer), fat_g (integer)
+Use realistic per-serving values. No markdown, no explanation — raw JSON array only.
+Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g":15}]`;
   try {
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
