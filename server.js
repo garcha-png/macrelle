@@ -50,7 +50,7 @@ Examples:
 "2 scrambled eggs" → [{"name":"Scrambled eggs ×2","cals":200,"protein_g":14,"carbs_g":2,"fat_g":14}]`;
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${process.env.GEMINI_KEY}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: 'You are a precise nutrition database. Follow all quantity and ingredient instructions exactly. Return only valid JSON arrays.' }] },
