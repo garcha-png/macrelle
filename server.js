@@ -31,16 +31,32 @@ app.use('/api', (req, res, next) => {
 app.post('/api/food', async (req, res) => {
   const { text } = req.body || {};
   if (!text) return res.status(400).json({ error: 'text required' });
-  const prompt = `You are a nutrition database. The user logged: "${text}"
-Return ONLY a JSON array of food items. Each item must have:
-  name (string), cals (integer), protein_g (integer), carbs_g (integer), fat_g (integer)
-Use realistic per-serving values. No markdown, no explanation — raw JSON array only.
-Example: [{"name":"Scrambled eggs","cals":200,"protein_g":14,"carbs_g":2,"fat_g":15}]`;
+  const prompt = `The user logged this food: "${text}"
+
+Rules — follow exactly:
+1. QUANTITIES: If a number is stated (e.g. "9 garlic breads", "3 eggs"), multiply all macros by that number and return ONE item with the TOTAL. Never return per-serving values when a quantity is given.
+2. INGREDIENT BREAKDOWN: If the user describes a drink or dish by listing ingredients with amounts (e.g. "tea with 100ml milk and 1 tsp sugar"), return EACH ingredient as its own separate item. Never collapse into a single generic entry.
+3. EXACT AMOUNTS: When specific measurements are given (100ml, 200g, 1 tbsp), calculate macros for that exact amount. Never substitute a generic serving size.
+4. NO ZEROS: Never return 0 for a macro unless the food genuinely has none. Always estimate rather than return 0.
+5. NOT FOOD: If the input is not a food or drink, return an empty array [].
+
+Return ONLY a raw JSON array — no markdown, no explanation.
+Schema: [{"name": string, "cals": integer, "protein_g": integer, "carbs_g": integer, "fat_g": integer}]
+
+Examples:
+"9 garlic breads" → [{"name":"Garlic bread ×9","cals":1170,"protein_g":27,"carbs_g":162,"fat_g":45}]
+"tea with 100ml milk and 1 tsp sugar" → [{"name":"Milk (100ml)","cals":61,"protein_g":3,"carbs_g":5,"fat_g":3},{"name":"Sugar (1 tsp)","cals":16,"protein_g":0,"carbs_g":4,"fat_g":0}]
+"200g chicken breast" → [{"name":"Chicken breast (200g)","cals":220,"protein_g":46,"carbs_g":0,"fat_g":5}]
+"2 scrambled eggs" → [{"name":"Scrambled eggs ×2","cals":200,"protein_g":14,"carbs_g":2,"fat_g":14}]`;
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_KEY}`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } }) }
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: 'You are a precise nutrition database. Follow all quantity and ingredient instructions exactly. Return only valid JSON arrays.' }] },
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: 'application/json' }
+        }) }
     );
     if (!r.ok) {
       const errBody = await r.text();
